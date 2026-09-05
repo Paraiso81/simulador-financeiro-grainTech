@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Calculadora de prazo crítico para negociação de grãos</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Simulador de prazo crítico para negociação de grãos</h1>
+    <div class="container-simulador">
+      <div class="container-question">
+        <p class="question">
+          Quantidade de grãos que entram no silo diariamente:
+        </p>
+        <div class="input-select-quantidade">
+          <div>
+            <input
+              class="qtdGraosEntrada"
+              type="text"
+              id="iptQtdGraosEntrada"
+            />
+            <select class="tipoGrao" name="Medida" id="selTipoGrao">
+              <option value="">Tipo de grão</option>
+              <option value="0">Soja</option>
+              <option value="1">Milho</option>
+              <option value="2">Arroz</option>
+            </select>
+          </div>
+          <span id="msgErrorEntradaGraoETipoMedidada"></span>
+        </div>
+      </div>
+      <div class="container-question">
+        <p class="question">
+          Quantidade de sáida de grãos do silo diariamente:
+        </p>
+        <input type="text" id="iptQuantidadeGraoSaida" />
+        <span id="msgErrorSaidaGrao"></span>
+      </div>
+      <div class="container-question">
+        <p class="question">Volume/Quantidade atual armazenada no silo:</p>
+        <input type="text" id="iptQtdGraoAtual" />
+        <span id="msgErrorQtdAtual"></span>
+      </div>
+      <div class="container-question">
+        <p class="question">Capacidade máxima do silo:</p>
+        <input type="text" id="iptCapacidadeMaximaSilo" />
+        <span id="msgErrorCapacidadeMaxima"></span>
+      </div>
+      <button onclick="calcularPrazoNegociacaoGraos()">Calcular</button>
+      <div id="resultado"></div>
+    </div>
+  </body>
+</html>
+<script>
+  let PRECO_SACA_SOJA = 120.5;
+  let PRECO_SACA_MILHO = 60.0;
+  let PRECO_SACA_ARROZ = 105.0;
+
+  function calcularPrazoNegociacaoGraos() {
+    // Limpa as mensagens de erro
+    msgErrorEntradaGraoETipoMedidada.innerHTML = "";
+    msgErrorSaidaGrao.innerHTML = "";
+    msgErrorQtdAtual.innerHTML = "";
+    msgErrorCapacidadeMaxima.innerHTML = "";
+    resultado.innerHTML = "";
+    // declarações de variaveis
+    let validacao = true;
+    let tipoGrao = Number(selTipoGrao.value);
+    let qtdGraoEntrada = Number(iptQtdGraosEntrada.value);
+    let qtdGraoSaida = Number(iptQuantidadeGraoSaida.value);
+    let qtdGraoAtual = Number(iptQtdGraoAtual.value);
+    let capacidadeMaximaSilo = Number(iptCapacidadeMaximaSilo.value);
+
+    // validações para as entradas não serem 0 ou ""
+    if (tipoGrao === "") {
+      msgErrorEntradaGraoETipoMedidada.innerHTML += `Selecione um tipo de grão válido. <br>`;
+      validacao = false;
+    }
+    if (qtdGraoEntrada <= 0) {
+      msgErrorEntradaGraoETipoMedidada.innerHTML += `A entrada de grãos deve ser maior que ZERO. <br>`;
+      validacao = false;
+    }
+
+    if (qtdGraoSaida <= 0) {
+      msgErrorSaidaGrao.innerHTML = `A saída de grãos deve ser maior que ZERO. <br>`;
+      validacao = false;
+    }
+
+    if (qtdGraoAtual <= 0) {
+      msgErrorQtdAtual.innerHTML = `A quantidade de grãos atual deve ser maior que ZERO.<br>`;
+      validacao = false;
+    }
+
+    if (capacidadeMaximaSilo <= 0) {
+      msgErrorCapacidadeMaxima.innerHTML = `A capaciddade máxima de grãos deve ser maior que ZERO. <br>`;
+      validacao = false;
+    }
+
+    // validação para verificar se a entrada de grãos é maior que a saída
+    if (qtdGraoEntrada <= qtdGraoSaida) {
+      msgErrorEntradaGraoETipoMedidada.innerHTML += `A entrada de grãos deve ser maior que a saída! <br>`;
+    }
+    let tipoGraoNome = "";
+    let precoSaca = 0;
+
+    // Executa apenas se passar das validações
+    if (validacao === true) {
+      // atribuindo um grão
+      if (tipoGrao === 0) {
+        tipoGraoNome = "Soja";
+        precoSaca = PRECO_SACA_SOJA;
+      } else if (tipoGrao === 1) {
+        tipoGraoNome = "Milho";
+        precoSaca = PRECO_SACA_MILHO;
+      } else {
+        tipoGraoNome = "Arroz";
+        precoSaca = PRECO_SACA_ARROZ;
+      }
+
+      let deficitDiario = qtdGraoEntrada - qtdGraoSaida;
+      let espacoRestanteSilo = capacidadeMaximaSilo - qtdGraoAtual;
+
+      let diasLotacao = espacoRestanteSilo / deficitDiario;
+
+      //Converter de toneladas para kilo e quantidade de sacas
+      let sacasAtuais = (qtdGraoAtual * 1000) / 60;
+      let sacasMaxima = (capacidadeMaximaSilo * 1000) / 60;
+
+      // Valor atual e valor maximo do silo
+      let valorAtual = sacasAtuais * precoSaca;
+      let valorProjetado = sacasMaxima * precoSaca;
+
+      // Exibição do resultado
+      resultado.innerHTML = `
+        <div class="container-relatorio">
+            <p class="question titulo-relatorio">Relatório da Operação</p>
+            
+            <p class="question">Grão armazenado: <span class="destaque-relatorio">${tipoGraoNome} (R$ ${precoSaca.toFixed(2)}/saca)</span></p>
+            
+            <p class="question">Prazo Crítico de Lotação: <span class="destaque-relatorio">${diasLotacao} dias</span></p>
+            
+            <div class="linha-divisoria">
+                <p class="question">Patrimônio atual no Silo: <span class="destaque-relatorio">R$ ${valorAtual.toFixed(2)}</span></p>
+                
+                <p class="question">Projeção Máxima (Silo Cheio): <span class="destaque-relatorio">R$ ${valorProjetado.toFixed(2)}</span></p>
+            </div>
+        </div>
+      `;
+    }
+  }
+</script>
